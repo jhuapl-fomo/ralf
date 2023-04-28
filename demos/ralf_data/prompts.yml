@@ -1,0 +1,14 @@
+enumerate_fruits:
+  model: gpt3
+  prompt_template: |-
+    Take a sentence and enumerate the number of fruits of each type. Ignore mentions of non-fruits.
+
+    Input: bob has 4 strawberries, two oranges, 3 cabbages and a single pear
+    Output: 'strawberries':4,'oranges':2,'pears':1
+    Input: {utterance}
+    Output:
+comment_on_fruit_count:
+  model: gpt3
+  prompt_template: |-
+    Question: Is it reasonable to have {fruit_total} fruits?
+    Answer:

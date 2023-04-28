@@ -1,0 +1,6 @@
+flit
+numpy
+openai
+PyYAML
+sentence-transformers
+nbsphinx

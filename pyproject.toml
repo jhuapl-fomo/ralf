@@ -1,0 +1,31 @@
+[build-system]
+build-backend = "flit_core.buildapi"
+requires = ["flit_core >=3.7.1,<4"]
+
+[project]
+name = "ralf"
+description = "A library to support the development of applictions using LLMs."
+readme = "README.md"
+# license = "MIT"
+dependencies = [
+    "openai",
+    # "plotly",
+    # "transformers"
+]
+dynamic = [
+    "version",
+]
+requires-python = ">=3.9"
+authors = [
+  { name = "Samuel Barham", email = "samuel.barham@jhuapl.edu" },
+  { name = "Arun Reddy", email = "arun.reddy@jhuapl.edu" },
+  { name = "Edward Staley", email = "edward.staley@jhuapl.edu" },
+
+]
+maintainers = [
+]
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "Operating System :: OS Independent",
+    "License :: OSI Approved :: MIT License"
+]
