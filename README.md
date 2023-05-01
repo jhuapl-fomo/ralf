@@ -4,7 +4,7 @@
 
 # ralf
 
-[![Documentation](https://readthedocs.org/projects/ralf-jhuapl/badge/?version=latest)](https://readthedocs.org/projects/ralf-jhuapl/badge/?version=latest)
+[![Documentation](https://readthedocs.org/projects/ralf-jhuapl/badge/?version=latest)](https://ralf-jhuapl.readthedocs.io/en/latest/)
 </div>
 
 **ralf** is a Python library intended to assist developers in creating applications
