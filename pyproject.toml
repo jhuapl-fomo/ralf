@@ -17,9 +17,9 @@ dynamic = [
 ]
 requires-python = ">=3.9"
 authors = [
-  { name = "Samuel Barham", email = "samuel.barham@jhuapl.edu" },
-  { name = "Arun Reddy", email = "arun.reddy@jhuapl.edu" },
-  { name = "Edward Staley", email = "edward.staley@jhuapl.edu" },
+  { name = "Samuel Barham", email = "ralf@jhuapl.edu" },
+  { name = "Arun Reddy", email = "ralf@jhuapl.edu" },
+  { name = "Edward Staley", email = "ralf@jhuapl.edu" },
 
 ]
 maintainers = [
