@@ -1,6 +1,9 @@
 
 <div align="center">
 <img alt="ralf_logo" src="assets/ralf_logo_v1.png" width="200">
+
+# ralf
+
 </div>
 
 **ralf** is a Python library intended to assist developers in creating applications
@@ -16,6 +19,8 @@ Currently, the **ralf** base library offers generic functionality for action cha
 (through the ``ZeroShotClassifier`` class). Check out the other projects within
 the RALF ecosystem for more specialized functionality, like dialogue management 
 and information extraction.
+
+
 
 ## Getting Started
 
