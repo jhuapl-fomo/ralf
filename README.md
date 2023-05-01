@@ -4,7 +4,7 @@
 </div>
 
 **ralf** is a Python library intended to assist developers in creating applications
-that involve calls to LLMs. A core concept in **ralf** is the idea of *composability*,
+that involve calls to Large Language Models (LLMs). A core concept in **ralf** is the idea of *composability*,
 which allows chaining together LLM calls such that the output of one call can be
 used to form the prompt of another. **ralf** makes it easy to chain together both
 LLM-based and Python-based actions-- enabling developers to construct complex 
