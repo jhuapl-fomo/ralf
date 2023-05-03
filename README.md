@@ -13,7 +13,7 @@
 that involve calls to Large Language Models (LLMs). A core concept in **ralf** is the idea of *composability*,
 which allows chaining together LLM calls such that the output of one call can be
 used to form the prompt of another. **ralf** makes it easy to chain together both
-LLM-based and Python-based actions-- enabling developers to construct complex 
+LLM-based and Python-based actions&mdash; enabling developers to construct complex 
 information processing pipelines composed of simpler building blocks. Using LLMs
 in this way can lead to more capable, robust, steerable and inspectable applications.
 
