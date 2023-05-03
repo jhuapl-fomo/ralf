@@ -1,6 +1,6 @@
 
 <div align="center">
-<img alt="ralf_logo" src="assets/ralf_logo_v1.png" width="200">
+<img alt="ralf_logo" src="https://github.com/jhuapl-fomo/ralf/raw/main/assets/ralf_logo_v1.png" width="200">
 
 # ralf
 
