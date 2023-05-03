@@ -36,13 +36,13 @@ We recommend creating a Conda environment before installing the package:
 
 #### Install from PyPI
 
-You may install **ralf** from PyPI using pip:
+You may install **ralf** from PyPI using ``pip``:
 
     pip install ralf-jhuapl
 
 #### Install from Source
 
-Or, you can build the package from source. First, clone the Github repository:
+Alternatively, you can build the package from source. First, clone the Github repository:
 
     git clone https://gitlab.jhuapl.edu/ralf/ralf
 
