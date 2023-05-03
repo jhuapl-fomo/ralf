@@ -29,7 +29,7 @@ information processing pipelines composed of simpler building blocks. Using LLMs
 in this way can lead to more capable, robust, steerable and inspectable applications.
 
 Currently, the **ralf** base library offers generic functionality for action chaining
-(through the ``Dispatcher`` and ``Action`` classes`) as well as text classificaiton
+(through the ``Dispatcher`` and ``Action`` classes) as well as text classificaiton
 (through the ``ZeroShotClassifier`` class). Check out the other projects within
 the RALF ecosystem for more specialized functionality, like dialogue management 
 and information extraction.
