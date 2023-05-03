@@ -6,12 +6,28 @@ a few minutes.
 
 Installation
 ------------
-First, clone the Gitlab project::
+We recommend creating a Conda environment before installing the package::
+
+    conda create -n ralf python=3.10
+    conda activate ralf
+
+Install from PyPI
++++++++++++++++++
+
+You may install **ralf** from PyPI using ``pip``::
+
+    pip install ralf-jhuapl
+
+Install from Source
++++++++++++++++++++
+
+Alternatively, you can build the package from source. First, clone the Github repository::
 
     git clone https://gitlab.jhuapl.edu/ralf/ralf
 
 Next, install the requirements using ``pip``::
-   
+    
+    cd ralf
     pip install -r requirements.txt
 
 Then, build the package using ``flit`` and install it using ``pip``::
@@ -38,6 +54,7 @@ Running the Demos
 
 To test if installation was successful, try running the demo scripts::
 
+    cd demos
     python demos/dispatcher_demo.py
     python demos/classifier_demo.py
 
