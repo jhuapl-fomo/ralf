@@ -85,4 +85,6 @@ The best way to get started with **ralf** is to follow the tutorials, which can 
 
 This project is released under the [MIT License](https://github.com/jhuapl-fomo/ralf/blob/main/LICENSE).
 
-Copyright 2023 The Johns Hopkins University Applied Physics Laboratory
+Copyright &copy; 2023 The Johns Hopkins University Applied Physics Laboratory
+
+Contact: ralf@jhuapl.edu
