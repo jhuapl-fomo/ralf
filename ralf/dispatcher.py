@@ -175,8 +175,9 @@ class Action:
                             (model_config if model_config else {})
             )
 
-            report.prompt = prompt
-            report.model_config = model_config
+            if report:
+                report.prompt = prompt
+                report.model_config = model_config
 
             if openai_model_types[model_config['model']] == 'completion':
                 response = openai.Completion.create(
