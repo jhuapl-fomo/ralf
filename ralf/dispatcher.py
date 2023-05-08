@@ -1,5 +1,8 @@
 import os
 import yaml
+import time
+import inspect
+from dataclasses import dataclass, asdict
 from pathlib import Path
 from typing import Optional, Union, Tuple
 
@@ -67,6 +70,39 @@ def clean_response(response: str) -> str:
     """
     return response.strip()
 
+#########################
+##  The Action Report  ##
+##       Class         ##
+#########################
+
+@dataclass
+class ActionReport:
+    implicit: bool
+    completed: bool = False
+    parent_script: str = None
+    source_code: str = None
+    model_config: dict = None
+    prompt: str = None
+    start_time: float = None
+    start_time_str: str = None
+    time_taken: float = None
+    successful: bool = None
+    result: dict = None
+
+    def start(self):
+        self.start_time = time.time()
+        # Also keep a string version of start time
+        self.start_time_str = time.strftime(
+            "%H:%M:%S %Y-%m-%S", time.localtime(self.start_time)
+        )
+
+    def finish(self, successful, result):
+        self.completed = True
+        self.successful = successful
+        self.result = result
+        self.time_taken = time.time() - self.start_time
+
+
 ###################
 ##  The Action   ##
 ##     Class     ##
@@ -106,7 +142,8 @@ class Action:
             self,
             context: Optional[dict] = None,
             prompt: Optional[str] = None,
-            model_config: Optional[dict] = None
+            model_config: Optional[dict] = None,
+            report: ActionReport = None
     ) -> dict:
         """Executes an action
 
@@ -119,7 +156,6 @@ class Action:
         :return: dictionary containing named outputs of the action
         :rtype: dict
         """
-
         if self.implicit:
             # Calling an LLM-based action
 
@@ -138,6 +174,9 @@ class Action:
                             (self.model_config if self.model_config else {}) |
                             (model_config if model_config else {})
             )
+
+            report.prompt = prompt
+            report.model_config = model_config
 
             if openai_model_types[model_config['model']] == 'completion':
                 response = openai.Completion.create(
@@ -163,7 +202,8 @@ class Action:
         else:
             # Calling a Python action
             return {self.output_name : self.func(context[self.input_name])}
-        
+
+
 #######################
 ##  The Dispatcher   ##
 ##       Class       ##
@@ -284,11 +324,18 @@ class ActionDispatcher:
         
         return ru.DEFAULT_ACTION_MODEL | model_config
 
-    def _run_script(self, action_list: list[Action], **kwargs) -> Tuple[dict, dict]:
+    def _run_script(self,
+                    action_list: list[Action],
+                    return_reports: bool = False, 
+                    **kwargs
+    ) -> Tuple[dict, dict]:
+
         """Takes in a list of Action objects and runs them in sequence
 
         :param action_list: a list of actions to execute in sequence
         :type action_list: list[Action]
+        :param return_reports: whether or not to return a list of ActionReports 
+        :type return_reports: bool, defaults to False
         :return: a tuple containing:
                     - output dictionary of the last action in the sequence
                     - dictionary with accumulated outputs of intermediate actions
@@ -296,17 +343,35 @@ class ActionDispatcher:
         """
         context = kwargs
         output = {}
+        reports = []
 
         for action in action_list:
-            output = self._run_action(action, context)
+            report = ActionReport(implicit=action.implicit)
+
+            report.start()
+            try:
+                output = self._run_action(action, context, report)
+                success= True
+            except Exception as e:
+                output = {'error_msg' : str(e)}
+                success = False
+                raise e
+            finally:
+                report.finish(successful=success, result=output)
+                reports.append(report)
 
             context = context | output
 
-        return output, context
+        if return_reports:
+            # TODO: decide whether to just replace context with reports in return_reports
+            return output, context, reports
+        else:
+            return output, context
 
     def _run_action(self, 
                     action: Action,
                     context: Optional[dict] = None,
+                    report: ActionReport = None,
                     **kwargs
     ) -> dict:
         """Takes in a single Action object and runs it.
@@ -331,7 +396,8 @@ class ActionDispatcher:
         output = action(
             context=context,
             prompt=prompt,
-            model_config=model_config
+            model_config=model_config,
+            report=report
         )
 
         return output
