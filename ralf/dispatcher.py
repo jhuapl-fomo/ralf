@@ -1,7 +1,7 @@
 import os
 import yaml
 from pathlib import Path
-from typing import Optional, Union
+from typing import Optional, Union, Tuple
 
 import openai
 
@@ -284,13 +284,15 @@ class ActionDispatcher:
         
         return ru.DEFAULT_ACTION_MODEL | model_config
 
-    def _run_script(self, action_list: list[Action], **kwargs) -> dict:
+    def _run_script(self, action_list: list[Action], **kwargs) -> Tuple[dict, dict]:
         """Takes in a list of Action objects and runs them in sequence
 
         :param action_list: a list of actions to execute in sequence
         :type action_list: list[Action]
-        :return: the output dictionary of the last action in the sequence
-        :rtype: dict
+        :return: a tuple containing:
+                    - output dictionary of the last action in the sequence
+                    - dictionary with accumulated outputs of intermediate actions
+        :rtype: Tuple[dict, dict]
         """
         context = kwargs
         output = {}
@@ -300,7 +302,7 @@ class ActionDispatcher:
 
             context = context | output
 
-        return output
+        return output, context
 
     def _run_action(self, 
                     action: Action,

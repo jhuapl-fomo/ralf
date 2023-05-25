@@ -51,6 +51,6 @@ fruit_script = [fruit_counter, count_adder, count_commentary]
 
 print("Run an input through a sequence of actions ...")
 input_text = "sally has 8 apples, six pomegranates, 4 bananas and 2 carrots"
-result = ad.execute(fruit_script, utterance=input_text)
+output, _ = ad.execute(fruit_script, utterance=input_text)
 
-print(result)
+print(output)
