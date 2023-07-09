@@ -89,14 +89,22 @@ class ActionReport:
     successful: bool = None
     result: dict = None
 
-    def start(self):
+    def start(self) -> None:
+        """Begins timing of action execution"""
         self.start_time = time.time()
         # Also keep a string version of start time
         self.start_time_str = time.strftime(
             "%H:%M:%S %Y-%m-%S", time.localtime(self.start_time)
         )
 
-    def finish(self, successful, result):
+    def finish(self, successful: bool, result: dict) -> None:
+        """Completes timing of action execution and saves completion info
+
+        :param successful: whether or not action completed successfully
+        :type successful: bool
+        :param result: output dictionary of the action
+        :type result: dict
+        """
         self.completed = True
         self.successful = successful
         self.result = result
@@ -329,7 +337,7 @@ class ActionDispatcher:
                     action_list: list[Action],
                     return_reports: bool = False, 
                     **kwargs
-    ) -> Tuple[dict, dict]:
+    ) -> Tuple:
 
         """Takes in a list of Action objects and runs them in sequence
 
@@ -340,7 +348,8 @@ class ActionDispatcher:
         :return: a tuple containing:
                     - output dictionary of the last action in the sequence
                     - dictionary with accumulated outputs of intermediate actions
-        :rtype: Tuple[dict, dict]
+                    - a list of ActionReport objects if return_reports is True
+        :rtype: Tuple[dict, dict] or Tuple[dict, dict, list] if return_reports
         """
         context = kwargs
         output = {}
