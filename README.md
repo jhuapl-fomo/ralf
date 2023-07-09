@@ -7,6 +7,7 @@
 [![Documentation](https://readthedocs.org/projects/ralf-jhuapl/badge/?version=latest)](https://ralf-jhuapl.readthedocs.io/en/latest/)
 [![PyPI version](https://badge.fury.io/py/ralf-jhuapl.svg)](https://badge.fury.io/py/ralf-jhuapl)
 [![License](https://img.shields.io/github/license/jhuapl-fomo/ralf.svg)](https://github.com/jhuapl-fomo/ralf/blob/main/LICENSE)
+
 </div>
 
 **ralf** is a Python library intended to assist developers in creating applications
