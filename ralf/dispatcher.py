@@ -1,23 +1,3 @@
-# Copyright (c) 2023 The Johns Hopkins University Applied Physics Laboratory
-
-# Permission is hereby granted, free of charge, to any person obtaining a copy
-# of this software and associated documentation files (the "Software"), to deal
-# in the Software without restriction, including without limitation the rights
-# to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-# copies of the Software, and to permit persons to whom the Software is
-# furnished to do so, subject to the following conditions:
-
-# The above copyright notice and this permission notice shall be included in all
-# copies or substantial portions of the Software.
-
-# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-# AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-# LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-# OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-# SOFTWARE.
-
 import os
 import yaml
 import time
@@ -43,37 +23,29 @@ except KeyError:
         "variable. Please see README for details.\n"
     )
     raise SystemExit(1)
+if len(os.environ["OPENAI_API_KEY"]) < 35: 
+    openai.api_type = "azure"
+    openai.api_base = ru.cfg['openai_api_base']
+    openai.api_version = "2023-05-15"  # subject to change
 
-
-###############
-##  Globals  ##
-###############
-
-openai_model_types = {
-    "gpt-4"             : "chatcompletion",
-    "gpt-4-0314"        : "chatcompletion",
-    "gpt-4-32k"         : "chatcompletion",
-    "gpt-4-32k-0314"    : "chatcompletion",
-    "gpt-3.5-turbo"     : "chatcompletion",
-    "gpt-3.5-turbo-0301": "chatcompletion",
-    "text-davinci-003"  : "completion",
-    "text-davinci-002"  : "completion",
-    "text-curie-001"    : "completion",
-    "text-babbage-001"  : "completion",
-    "text-ada-001"      : "completion",
-    "davinci"           : "completion",
-    "curie"             : "completion",
-    "babbage"           : "completion",
-    "ada"               : "completion",
-    
-}
-
-# default system message for ChatCompletion
-DEFAULT_SYSTEM_MESSAGE = "You are a helpful assistant." #TODO: make configurable
 
 ###############
 ##  Helpers  ##
 ###############
+
+def determine_model_type(model_name: str) -> str:
+    """Determines the endpoint type given an OpenAI model name
+
+    :param model_name: name of the OpenAI model
+    :type model_name: str
+    :return: endpoint type (currently either completion or chatcompletion)
+    :rtype: str
+    """
+
+    if model_name.startswith(("gpt-",)):
+        return "chatcompletion"
+    else:
+        return "completion"
 
 def clean_response(response: str) -> str:
     """
@@ -89,6 +61,7 @@ def clean_response(response: str) -> str:
     :rtype: str
     """
     return response.strip()
+
 
 #########################
 ##  The Action Report  ##
@@ -109,26 +82,21 @@ class ActionReport:
     successful: bool = None
     result: dict = None
 
-    def start(self) -> None:
-        """Begins timing of action execution"""
+    def start(self):
         self.start_time = time.time()
         # Also keep a string version of start time
         self.start_time_str = time.strftime(
             "%H:%M:%S %Y-%m-%S", time.localtime(self.start_time)
         )
 
-    def finish(self, successful: bool, result: dict) -> None:
-        """Completes timing of action execution and saves completion info
-
-        :param successful: whether or not action completed successfully
-        :type successful: bool
-        :param result: output dictionary of the action
-        :type result: dict
-        """
+    def finish(self, successful, result):
         self.completed = True
         self.successful = successful
         self.result = result
         self.time_taken = time.time() - self.start_time
+
+    def to_json(self):
+        return asdict(self)
 
 
 ###################
@@ -142,16 +110,19 @@ class Action:
     def __init__(
             self,
             prompt=None,
+            messages=None,
             prompt_name=None,
             prompt_template=None,
             model_config=None,
             func=None,
             input_name=None,
             context=None,
-            output_name="output"
+            output_name="output",
+            request_timeout=ru.cfg["timeout_limit"],
     ) -> None:
         # Check that exactly one of the action specifiers was supplied
         assert sum([bool(prompt),
+                    bool(messages),
                     bool(prompt_name), 
                     bool(prompt_template), 
                     bool(func)]) == 1, BAD_ACTION_MSG
@@ -162,6 +133,8 @@ class Action:
         self.func = func
         self.input_name = input_name
         self.model_config = model_config
+        self.messages = messages
+        self.request_timeout = request_timeout
 
         self.implicit = False if self.func else True
         self.output_name = output_name
@@ -170,6 +143,7 @@ class Action:
             self,
             context: Optional[dict] = None,
             prompt: Optional[str] = None,
+            messages: Optional[str] = None,
             model_config: Optional[dict] = None,
             report: ActionReport = None
     ) -> dict:
@@ -195,8 +169,9 @@ class Action:
             else:
                 # Use the prompt given when calling, or if one isn't given,
                 # use the one specified when defining the action
-                assert prompt or self.prompt
+                assert prompt or self.prompt or messages or self.messages
                 prompt = prompt if prompt else self.prompt
+                messages = messages if messages else self.messages
 
             model_config = (ru.DEFAULT_ACTION_MODEL | 
                             (self.model_config if self.model_config else {}) |
@@ -207,30 +182,89 @@ class Action:
                 report.prompt = prompt
                 report.model_config = model_config
 
-            if openai_model_types[model_config['model']] == 'completion':
-                response = openai.Completion.create(
-                    prompt=prompt,
-                    **model_config
-                )
-                completion = response.choices[0].text
+            task = determine_model_type(model_config['model'])
+            completion = None
 
-            elif openai_model_types[model_config['model']] == 'chatcompletion':
-                response = openai.ChatCompletion.create(
-                    messages=[
-                        {"role": "system", "content": DEFAULT_SYSTEM_MESSAGE},
-                        {"role": "user", "content": prompt}
-                    ],
-                    **model_config
-                )
-                completion = response['choices'][0]['message']['content']
+            if task == 'completion':
+                if prompt:
+                    response = self.submit_openai_request(
+                        task=task,
+                        prompt=prompt,
+                        **model_config
+                    )
+                    if response:
+                        completion = response.choices[0].text
+                else:
+                    raise Exception("Message prompt format cannot be used for completion")
+
+            elif task == 'chatcompletion':
+                if messages:
+                    response = self.submit_openai_request(
+                        task=task,
+                        messages=messages,
+                        **model_config
+                    )
+                    if response:
+                        completion = response['choices'][0]['message']['content']
+
+                else:
+                    response = self.submit_openai_request(
+                        task=task,
+                        messages=[
+                            {"role": "system", "content": ru.cfg['default_system_message']},
+                            {"role": "user", "content": prompt}
+                        ],
+                        **model_config
+                    )
+                    if response:
+                        completion = response['choices'][0]['message']['content']
 
             else:
                 raise ValueError("No such OpenAI model type.")
 
-            return {self.output_name : completion}
+            return {self.output_name : completion if completion else f"No response from OpenAI to {task}"}
         else:
             # Calling a Python action
             return {self.output_name : self.func(context[self.input_name])}
+
+    def submit_openai_request(self, task, retries=10, **kwargs):
+
+        errors = 0
+
+        if task == "completion":
+            task_func = openai.Completion.create
+        elif task == "chatcompletion":
+            task_func = openai.ChatCompletion.create
+        else:
+            raise ValueError(f"{task} is not a recognized OpenAI task")
+
+        while retries + 1 > 0:
+            try:
+                response = task_func(**kwargs, request_timeout=self.request_timeout)
+                return response
+            except openai.error.Timeout:
+                print(f"OpenAI timeout error: ", end="")
+            except openai.error.APIError:
+                print(f"OpenAI API error: ", end="")
+            except openai.error.APIConnectionError:
+                print(f"OpenAI API connection error: ", end="")
+            except openai.error.InvalidRequestError:
+                print(f"OpenAI invalid request error: ", end="")
+            except openai.error.AuthenticationError:
+                print(f"OpenAI authentication error: ", end="")
+            except openai.error.PermissionError:
+                print(f"OpenAI permission error: ", end="")
+            except openai.error.RateLimitError:
+                print(f"OpenAI rate limit error: ", end="")
+            except openai.error.ServiceUnavailableError:
+                print(f"OpenAI service unavailable error: ", end="")
+
+            # exponential backoff
+            delay = 2**(errors/2)
+            print(f"Retrying in {delay:.2f} {'second' if int(delay) == 1 else 'seconds'} ({retries} {'retry' if retries == 1 else 'retries'} remaining)")
+            time.sleep(delay)
+            retries -= 1
+            errors += 1
 
 
 #######################
@@ -328,10 +362,11 @@ class ActionDispatcher:
         
         assert action.prompt or action.prompt_template or action.prompt_name
 
-        if action.prompt_template:
-            # Caller directly supplied prompt template and possibly model config
-            model_config = action.model_config if action.model_config else {}
-        else:
+        # model config specified when defining the action
+        inline_model_config = action.model_config if action.model_config else {}
+
+        # look for YAML model specification 
+        if action.prompt_name: # Caller is using YAML to define prompt template
             # Get the model name that was specified in prompts YAML
             if action.prompt_name in self.prompts:
                 prompt_dict = self.prompts[action.prompt_name]
@@ -344,20 +379,22 @@ class ActionDispatcher:
 
             # Find the configuration for the model based on its name
             if model_name is None: # no model supplied in prompts YAML
-                model_config = {}
+                yaml_model_config = {}
             elif model_name in self.models:
-                model_config = self.models[model_name]
+                yaml_model_config = self.models[model_name]
             else:
                 raise KeyError(
                     f"Model named '{model_name}' not in the model dictionary.")
+        else:
+            yaml_model_config = {}
         
-        return ru.DEFAULT_ACTION_MODEL | model_config
+        return ru.DEFAULT_ACTION_MODEL | yaml_model_config | inline_model_config
 
     def _run_script(self,
                     action_list: list[Action],
                     return_reports: bool = False, 
                     **kwargs
-    ) -> Tuple:
+    ) -> Tuple[dict, dict]:
 
         """Takes in a list of Action objects and runs them in sequence
 
@@ -368,8 +405,7 @@ class ActionDispatcher:
         :return: a tuple containing:
                     - output dictionary of the last action in the sequence
                     - dictionary with accumulated outputs of intermediate actions
-                    - a list of ActionReport objects if return_reports is True
-        :rtype: Tuple[dict, dict] or Tuple[dict, dict, list] if return_reports
+        :rtype: Tuple[dict, dict]
         """
         context = kwargs
         output = {}
@@ -381,7 +417,7 @@ class ActionDispatcher:
             report.start()
             try:
                 output = self._run_action(action, context, report)
-                success= True
+                success = True
             except Exception as e:
                 output = {'error_msg' : str(e)}
                 success = False

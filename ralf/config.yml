@@ -1,0 +1,3 @@
+openai_api_base: https://cpgai.openai.azure.com/ # needed if using Azure
+default_system_message: "You are a helpful assistant."
+timeout_limit: 20

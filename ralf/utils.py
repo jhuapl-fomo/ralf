@@ -1,23 +1,3 @@
-# Copyright (c) 2023 The Johns Hopkins University Applied Physics Laboratory
-
-# Permission is hereby granted, free of charge, to any person obtaining a copy
-# of this software and associated documentation files (the "Software"), to deal
-# in the Software without restriction, including without limitation the rights
-# to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-# copies of the Software, and to permit persons to whom the Software is
-# furnished to do so, subject to the following conditions:
-
-# The above copyright notice and this permission notice shall be included in all
-# copies or substantial portions of the Software.
-
-# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-# AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-# LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-# OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-# SOFTWARE.
-
 #############
 ## Imports ##
 #############
@@ -25,9 +5,10 @@
 # Standard lib
 import re
 import yaml
+import os
 from typing import Optional
+from pathlib import Path
 
-# ML/etc.
 import numpy as np
 from sentence_transformers import SentenceTransformer
 
@@ -36,26 +17,56 @@ from sentence_transformers import SentenceTransformer
 ##  Defaults  ##
 ################
 
+# Load configurations
+with open(Path(__file__).parent / 'config.yml', 'r') as f:
+    cfg = yaml.load(f, Loader=yaml.FullLoader)
+
 DEFAULT_ENCODER = SentenceTransformer('all-MiniLM-L6-v2', device='cpu')
 
-DEFAULT_ACTION_MODEL = {
-    "model": "gpt-3.5-turbo",
-    "temperature": 0.7,
-    "max_tokens": 256,
-    "top_p": 1.0,
-    "frequency_penalty": 0.0,
-    "presence_penalty": 0.0,
-}
+if len(os.environ["OPENAI_API_KEY"]) < 35:
+    # using models through Azure    
+    DEFAULT_ACTION_MODEL = {
+        "model": "gpt-35-turbo-0613",
+        "deployment_id": "gpt-35-turbo-0613",
+        "temperature": 0.7,
+        "max_tokens": 256,
+        "top_p": 1.0,
+        "frequency_penalty": 0.0,
+        "presence_penalty": 0.0,
+    }
 
-DEFAULT_CLASSIFIER_MODEL = {
-    "model": "text-davinci-003",
-    "temperature": 0.0,
-    "max_tokens": 100,
-    "top_p": 1.0,
-    "frequency_penalty": 0.0,
-    "presence_penalty": 0.0,
-    "stop": ['.'],
-}
+    DEFAULT_CLASSIFIER_MODEL = {
+        "model": "gpt-35-turbo-0613",
+        "deployment_id": "gpt-35-turbo-0613",
+        "temperature": 0.0,
+        "max_tokens": 100,
+        "top_p": 1.0,
+        "frequency_penalty": 0.0,
+        "presence_penalty": 0.0,
+        "stop": ['.'],
+    }
+else:
+    # using models through OpenAI directly
+    DEFAULT_ACTION_MODEL = {
+        "model": "gpt-3.5-turbo-0613",
+        #"deployment_id": "gpt-35-turbo-0613",
+        "temperature": 0.7,
+        "max_tokens": 256,
+        "top_p": 1.0,
+        "frequency_penalty": 0.0,
+        "presence_penalty": 0.0,
+    }
+
+    DEFAULT_CLASSIFIER_MODEL = {
+        "model": "text-davinci-003",
+        #"deployment_id": "gpt-35-turbo-0613",
+        "temperature": 0.0,
+        "max_tokens": 100,
+        "top_p": 1.0,
+        "frequency_penalty": 0.0,
+        "presence_penalty": 0.0,
+        "stop": ['.'],
+    }
 
 
 #########################
