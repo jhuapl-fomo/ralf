@@ -143,7 +143,7 @@ class Action:
             self,
             context: Optional[dict] = None,
             prompt: Optional[str] = None,
-            messages: Optional[str] = None,
+            messages: Optional[list[dict]] = None,
             model_config: Optional[dict] = None,
             report: ActionReport = None
     ) -> dict:
