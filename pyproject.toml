@@ -12,6 +12,7 @@ dependencies = [
     "numpy",
     "PyYAML",
     "sentence-transformers",
+    "tiktoken",
 ]
 dynamic = [
     "version",
