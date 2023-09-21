@@ -6,7 +6,7 @@
 Welcome!
 ================================
 Welcome to the documentation for **ralf**, the base library within the larger
-`RALF Ecosystem <https://gitlab.jhuapl.edu/ralf>`_. Here you will find documentation
+RALF Ecosystem. Here you will find documentation
 and tutorials that will help you get started with building applications using Large
 Language Models (LLMs).
 
