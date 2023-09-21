@@ -44,7 +44,7 @@ You may install **ralf** from PyPI using ``pip``:
 
 Alternatively, you can build the package from source. First, clone the Github repository:
 
-    git clone https://gitlab.jhuapl.edu/ralf/ralf
+    git clone https://github.com/jhuapl-fomo/ralf.git
 
 Next, install the requirements using ``pip``:
     
