@@ -1,6 +1,6 @@
 flit
 numpy
-openai
+openai==0.28.0
 PyYAML
 sentence-transformers
 nbsphinx

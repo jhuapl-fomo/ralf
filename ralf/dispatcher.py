@@ -14,20 +14,28 @@ import ralf.utils as ru
 ##  OpenAI Configuration  ##
 ############################
 
+class OpenAIConfigurationError(Exception):
+    pass
+
 # Load the OpenAI API key
 try:
     openai.api_key = os.environ["OPENAI_API_KEY"]
 except KeyError:
-    print(
+    raise OpenAIConfigurationError(
         "You must save your OpenAI API key as an environment "
         "variable. Please see README for details.\n"
     )
     raise SystemExit(1)
 if len(os.environ["OPENAI_API_KEY"]) < 35: 
     openai.api_type = "azure"
-    openai.api_base = ru.cfg['openai_api_base']
     openai.api_version = "2023-05-15"  # subject to change
-
+    try:
+        openai.api_base = os.environ["OPENAI_AZURE_ENDPOINT"]
+    except KeyError:
+        raise OpenAIConfigurationError(
+            "You must specify an Azure endpoint URL as an environment "
+            "variable. Please see README for details.\n"
+        )
 
 ###############
 ##  Helpers  ##

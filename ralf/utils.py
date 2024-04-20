@@ -27,8 +27,8 @@ DEFAULT_ENCODER = SentenceTransformer('all-MiniLM-L6-v2', device='cpu')
 if len(os.environ["OPENAI_API_KEY"]) < 35:
     # using models through Azure    
     DEFAULT_ACTION_MODEL = {
-        "model": "gpt-35-turbo-0613",
-        "deployment_id": "gpt-35-turbo-0613",
+        "model": "gpt-35-turbo-0125",
+        "deployment_id": "gpt-35-turbo-0125",
         "temperature": 0.7,
         "max_tokens": 256,
         "top_p": 1.0,
@@ -37,8 +37,8 @@ if len(os.environ["OPENAI_API_KEY"]) < 35:
     }
 
     DEFAULT_CLASSIFIER_MODEL = {
-        "model": "gpt-35-turbo-0613",
-        "deployment_id": "gpt-35-turbo-0613",
+        "model": "gpt-35-turbo-0125",
+        "deployment_id": "gpt-35-turbo-0125",
         "temperature": 0.0,
         "max_tokens": 100,
         "top_p": 1.0,
@@ -50,7 +50,6 @@ else:
     # using models through OpenAI directly
     DEFAULT_ACTION_MODEL = {
         "model": "gpt-3.5-turbo-0613",
-        #"deployment_id": "gpt-35-turbo-0613",
         "temperature": 0.7,
         "max_tokens": 256,
         "top_p": 1.0,
@@ -60,7 +59,6 @@ else:
 
     DEFAULT_CLASSIFIER_MODEL = {
         "model": "text-davinci-003",
-        #"deployment_id": "gpt-35-turbo-0613",
         "temperature": 0.0,
         "max_tokens": 100,
         "top_p": 1.0,
