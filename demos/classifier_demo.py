@@ -8,7 +8,7 @@ from ralf import classifier
 
 # Define the zero shot classifer
 sentiment_classifier = classifier.ZeroShotClassifier(
-    completion_model_config={'model':'gpt-4'}
+    completion_model_config={'model':'gpt-35-turbo-0125'}
 )
 
 # Add classes with zero or more examples of each

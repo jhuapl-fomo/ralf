@@ -6,6 +6,7 @@ from dataclasses import dataclass, asdict
 from pathlib import Path
 from typing import Optional, Union, Tuple
 
+from openai import OpenAI, AzureOpenAI
 import openai
 
 import ralf.utils as ru
@@ -16,26 +17,6 @@ import ralf.utils as ru
 
 class OpenAIConfigurationError(Exception):
     pass
-
-# Load the OpenAI API key
-try:
-    openai.api_key = os.environ["OPENAI_API_KEY"]
-except KeyError:
-    raise OpenAIConfigurationError(
-        "You must save your OpenAI API key as an environment "
-        "variable. Please see README for details.\n"
-    )
-    raise SystemExit(1)
-if len(os.environ["OPENAI_API_KEY"]) < 35: 
-    openai.api_type = "azure"
-    openai.api_version = "2023-05-15"  # subject to change
-    try:
-        openai.api_base = os.environ["OPENAI_AZURE_ENDPOINT"]
-    except KeyError:
-        raise OpenAIConfigurationError(
-            "You must specify an Azure endpoint URL as an environment "
-            "variable. Please see README for details.\n"
-        )
 
 ###############
 ##  Helpers  ##
@@ -69,6 +50,62 @@ def clean_response(response: str) -> str:
     :rtype: str
     """
     return response.strip()
+
+def azure_create(task, **kwargs):
+
+    # endpoints to the model server
+    try:
+        client = AzureOpenAI(
+            azure_endpoint=os.environ["OPENAI_AZURE_ENDPOINT"],
+            api_key=os.environ["OPENAI_API_KEY"],
+            api_version="2024-02-01"
+        )
+    except KeyError:
+        print(
+            "You must specify an Azure endpoint URL as an environment "
+            "variable. Please see README for details.\n"
+        )
+        return None
+
+    # submit the query to the model server
+    return openai_create(task, client, **kwargs)
+
+def openai_create(task, client=None, **kwargs):
+    # endpoints to the model server
+    try:
+        if client is None:
+            client = OpenAI(api_key=os.environ["OPENAI_API_KEY"])
+    except KeyError:
+        print(
+            "You must save your OpenAI API key as an environment "
+            "variable. Please see README for details.\n"
+        )
+        return None
+
+    if task == "completion":
+        task_func = client.completions.create
+    elif task == "chatcompletion":
+        task_func = client.chat.completions.create
+    else:
+        raise ValueError(f"{task} is not a recognized OpenAI task")
+
+    # submit the query to the model server
+    try:
+        response = task_func(**kwargs)
+        return response
+    except openai.APITimeoutError as e:
+        print(e)
+    except openai.BadRequestError as e:
+        print(e)
+    except openai.AuthenticationError as e:
+        print(e)
+    except openai.PermissionDeniedError as e:
+        print(e)
+    except openai.RateLimitError as e:
+        print(e)
+    except openai.APIError as e:
+        print(e)
+    return None
 
 
 #########################
@@ -195,28 +232,34 @@ class Action:
 
             if task == 'completion':
                 if prompt:
-                    response = self.submit_openai_request(
+                    response = self.submit_llm_request(
                         task=task,
                         prompt=prompt,
                         **model_config
                     )
                     if response:
-                        completion = response.choices[0].text
+                        try:
+                            completion = response["choices"][0]["text"]
+                        except:
+                            completion = response.choices[0].text
                 else:
                     raise Exception("Message prompt format cannot be used for completion")
 
             elif task == 'chatcompletion':
                 if messages:
-                    response = self.submit_openai_request(
+                    response = self.submit_llm_request(
                         task=task,
                         messages=messages,
                         **model_config
                     )
                     if response:
-                        completion = response['choices'][0]['message']['content']
+                        try:
+                            completion = response["choices"][0]["message"]["content"]
+                        except:
+                            completion = response.choices[0].message.content
 
                 else:
-                    response = self.submit_openai_request(
+                    response = self.submit_llm_request(
                         task=task,
                         messages=[
                             {"role": "system", "content": ru.cfg['default_system_message']},
@@ -225,7 +268,10 @@ class Action:
                         **model_config
                     )
                     if response:
-                        completion = response['choices'][0]['message']['content']
+                        try:
+                            completion = response["choices"][0]["message"]["content"]
+                        except:
+                            completion = response.choices[0].message.content
 
             else:
                 raise ValueError("No such OpenAI model type.")
@@ -235,37 +281,22 @@ class Action:
             # Calling a Python action
             return {self.output_name : self.func(context[self.input_name])}
 
-    def submit_openai_request(self, task, retries=10, **kwargs):
-
-        errors = 0
-
-        if task == "completion":
-            task_func = openai.Completion.create
-        elif task == "chatcompletion":
-            task_func = openai.ChatCompletion.create
+    def submit_llm_request(self, task, retries=10, service=None, **kwargs):
+        if not service:
+            service = "azure" if len(os.environ.get("OPENAI_API_KEY", "")) <= 32 else "openai"
+        if service == "openai":
+            service_func = openai_create
+        elif service == "azure":
+            service_func = azure_create
+        # TODO: add support for local models here
         else:
-            raise ValueError(f"{task} is not a recognized OpenAI task")
-
+            raise ValueError(f"{service} is not a recognized LLM service")
+        
+        errors = 0
         while retries + 1 > 0:
-            try:
-                response = task_func(**kwargs, request_timeout=self.request_timeout)
+            response = service_func(task, **kwargs, timeout=ru.cfg['timeout_limit'])
+            if response:
                 return response
-            except openai.error.Timeout:
-                print(f"OpenAI timeout error: ", end="")
-            except openai.error.APIError:
-                print(f"OpenAI API error: ", end="")
-            except openai.error.APIConnectionError:
-                print(f"OpenAI API connection error: ", end="")
-            except openai.error.InvalidRequestError:
-                print(f"OpenAI invalid request error: ", end="")
-            except openai.error.AuthenticationError:
-                print(f"OpenAI authentication error: ", end="")
-            except openai.error.PermissionError:
-                print(f"OpenAI permission error: ", end="")
-            except openai.error.RateLimitError:
-                print(f"OpenAI rate limit error: ", end="")
-            except openai.error.ServiceUnavailableError:
-                print(f"OpenAI service unavailable error: ", end="")
 
             # exponential backoff
             delay = 2**(errors/2)
@@ -273,7 +304,6 @@ class Action:
             time.sleep(delay)
             retries -= 1
             errors += 1
-
 
 #######################
 ##  The Dispatcher   ##

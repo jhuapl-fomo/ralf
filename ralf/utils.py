@@ -28,7 +28,7 @@ if len(os.environ["OPENAI_API_KEY"]) < 35:
     # using models through Azure    
     DEFAULT_ACTION_MODEL = {
         "model": "gpt-35-turbo-0125",
-        "deployment_id": "gpt-35-turbo-0125",
+        # "deployment_id": "gpt-35-turbo-0125",
         "temperature": 0.7,
         "max_tokens": 256,
         "top_p": 1.0,
@@ -38,7 +38,7 @@ if len(os.environ["OPENAI_API_KEY"]) < 35:
 
     DEFAULT_CLASSIFIER_MODEL = {
         "model": "gpt-35-turbo-0125",
-        "deployment_id": "gpt-35-turbo-0125",
+        # "deployment_id": "gpt-35-turbo-0125",
         "temperature": 0.0,
         "max_tokens": 100,
         "top_p": 1.0,
