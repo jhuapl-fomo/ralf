@@ -4,3 +4,4 @@ openai==1.23.2
 PyYAML
 sentence-transformers
 nbsphinx
+sphinx_rtd_theme
