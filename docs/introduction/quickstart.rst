@@ -42,11 +42,19 @@ Or if you would like an editable installation, you can instead use::
 OpenAI Configuration
 --------------------
 
-**ralf** currently relies on language models provided by OpenAI. 
-In order to access the models, you must store your OpenAI API key as an 
-environment variable by executing the following in bash::
+**ralf** currently relies on language models provided by OpenAI, either directly
+via the OpenAI API or through Microsoft Azure. In either case, you must save your API key as an
+environment variable by executing the following in bash:
 
-    echo "export OPENAI_API_KEY='yourkey'" >> ~/.bashrc
+    echo "export OPENAI_API_KEY='your_key'" >> ~/.bashrc
+    source ~/.bashrc
+
+OpenAI Configuration (Azure)
+----------------------------
+If you are accessing OpenAI models through Azure, you must additionally provide
+the URL for your Azure endpoint.
+
+    echo "export OPENAI_API_KEY='https://yourendpoint.openai.azure.com/'" >> ~/.bashrc
     source ~/.bashrc
 
 Running the Demos
